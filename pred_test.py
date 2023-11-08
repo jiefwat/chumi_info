@@ -1,4 +1,4 @@
-from data_py_pred import SkuDemodsPred
+from mul_models_info import SkuDemodsPred
 import pandas as pd
 # import cx_Oracle
 # cx_Oracle.init_oracle_c lient(lib_dir=r"/Users/kaka/Downloads/instantclient_18_1")
@@ -84,8 +84,5 @@ if __name__ == '__main__':
     end_full_time = time.time()
     print('总耗时：',(end_full_time -fst_full_time)/60)
 
-# 1. 我这边算法模型的开发已经完成了，在部分样本上的预测效果是优于poc和svg，本周内代码可以上线
-# 2. 目前有一点风险是 当前数据量过大，我们一开始的设计冗余是在千万条级别，
-#   但目前总数据量150亿条，这个需要做拆分
 
-# 下载样本大小 (6501, 11)
+
