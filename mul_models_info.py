@@ -146,6 +146,7 @@ class SkuDemodsPred(object):
         predictions[predictions < 0.1] = 0
         predictions = self.demods_groby_month(predictions,'pred_values')
 
+
         his_info = self.demods_groby_month(data_train, 'pred_values')
         thr_std = his_info.groupby(['hostpartid', 'hostlocid', 'dshostid'])['pred_values'].std().reset_index()
         thr_std['pred_values'] = [x * 3 for x in thr_std['pred_values']]
