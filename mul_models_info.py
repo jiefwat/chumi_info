@@ -3,6 +3,7 @@ import cx_Oracle
 import warnings
 warnings.filterwarnings("ignore")
 
+
 cx_Oracle.init_oracle_client(lib_dir=r"/Users/kaka/Downloads/instantclient_18_1")
 
 import pandas as pd
@@ -11,35 +12,36 @@ from sklearn.linear_model import Ridge
 import calendar
 from datetime import datetime
 
-# 获取当前日期
-current_date = datetime.now()
-# 获取当前月份的最后一天
-last_day = calendar.monthrange(current_date.year, current_date.month)[1]
-# 生成最后一天的日期字符串形式
-last_day_str = f"{current_date.year}-{current_date.month:02d}-{last_day:02d}"
 
-from datetime import datetime, timedelta
+
+import datetime
 
 
 def last_days_of_month_and_six_months_ago(date):
     # 获取当前月份的最后一天
-    last_day_current_month = date.replace(day=1, month=date.month + 1)
+    if date.month == 12:
+        last_day_current_month = datetime.date(date.year, 12, 31)
+    else:
+        last_day_current_month = datetime.date(date.year, date.month + 1, 1) - datetime.timedelta(days=1)
 
-    # 计算6个月前的日期
-    six_months_ago = date - timedelta(days=180)
+        # 计算6个月前的日期
+    six_months_ago = date - datetime.timedelta(days=180)
 
-    # 获取6个月前月份的最后一天
-    last_day_six_months_ago = six_months_ago.replace(day=1, month=six_months_ago.month + 1)
+    # 获取6个月前日期的最后一天
+    if six_months_ago.month == 12:
+        last_day_six_months_ago = datetime.date(six_months_ago.year, 12, 31)
+    else:
+        last_day_six_months_ago = datetime.date(six_months_ago.year, six_months_ago.month + 1, 1) - datetime.timedelta(
+            days=1)
 
     return last_day_current_month.strftime("%Y-%m-%d"), last_day_six_months_ago.strftime("%Y-%m-%d")
-
 
 
 
 class SkuDemodsPred(object):
     def __init__(self):
 
-        self.current_date = datetime.now()
+        self.current_date = datetime.date.today()
         self.now_time_future, self.end_time_train = \
             last_days_of_month_and_six_months_ago(self.current_date)
         self.lags = 24
@@ -60,13 +62,13 @@ class SkuDemodsPred(object):
 
     def data_preprocessing(self,data):
         data.columns = ['零件号', '仓库代码', '年月', '需求流', '需求数量', 'ABC需求频次分类',
-                          'ABC价格分类', 'ABC需求数量分类', '零件号第四位','组装包','是否预测']
+                          'ABC价格分类', 'ABC需求数量分类', '零件号第四位','组装包','是否预测','类型']
         data=data[data['是否预测']=='Y']
         data['日期'] = pd.to_datetime(data['年月'], format='%Y%m%d').dt.strftime('%Y-%m-%d')
         data = data.groupby(['零件号', '仓库代码', '需求流', '日期'])['需求数量'].sum().reset_index()
         data['日期'] = pd.to_datetime(data['日期'])
         """补零"""
-        date_range = pd.date_range(start='2022-01-01', end=self.now_time_future, freq='D')
+        date_range = pd.date_range(start='2023-01-01', end=self.now_time_future, freq='D')
         # 创建空的DataFrame，准备存储填充后的结果
         filled_df = pd.DataFrame()
         # 针对每个 SKU 进行填充操作
@@ -167,7 +169,7 @@ class SkuDemodsPred(object):
             # 定义游标
             cursor = conn.cursor()
             # 执行插入操作
-            sql = "INSERT INTO nppbuf.T_DD_FORECAST_DETAIL_test (hostpartid, hostlocid, dshostid, year, month, pred_values) VALUES (:1, :2, :3, :4, :5, :6)"
+            sql = "INSERT INTO nppbuf.T_DD_demand_detail_fstout (hostpartid, hostlocid, dshostid, year, month, pred_values) VALUES (:1, :2, :3, :4, :5, :6)"
             for index, row in predictions.iterrows():
                 cursor.execute(sql, (
                 row['hostpartid'], row['hostlocid'], row['dshostid'], row['year'], row['month'], row['pred_values']))
@@ -179,7 +181,6 @@ class SkuDemodsPred(object):
             cursor.close()
             conn.close()
         except:
-            predictions.to_csv('111.csv',encoding ='utf-8')
             raise
 
 

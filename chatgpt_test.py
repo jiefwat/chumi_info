@@ -36,6 +36,7 @@ def send_chat_message(input_text, avoidRepeatable):
         "avoidRepeatable": avoidRepeatable
     }
 
+
     response = requests.post(url, headers=headers, json=data)
     return response
 

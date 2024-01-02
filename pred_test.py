@@ -5,10 +5,11 @@ import pandas as pd
 
 import time
 
+
 def get_full_skulist(connection):
     sql_query = """  select 
                   HOSTPARTID 
-          from nppbuf.T_DD_FORECAST_DETAIL_FJHIS 
+          from nppbuf.t_dd_detail_ml where  historybegdate>=20230101
           group by HOSTPARTID
     """
     # 执行 SQL 查询，并按批次抽取数据
@@ -20,14 +21,14 @@ def get_full_skulist(connection):
 def clear_table_in_oracle(connection):
     # 连接到Oracle数据库
     cursor = connection.cursor()
-    query = "TRUNCATE TABLE nppbuf.T_DD_FORECAST_DETAIL_test"
+    query = "TRUNCATE TABLE nppbuf.T_DD_demand_detail_fstout"
     cursor.execute(query)
 
 
 def get_full_counts(connection):
     sql_query = """  select 
                   count(*) 
-          from nppbuf.T_DD_FORECAST_DETAIL_FJHIS where historybegdate>20220101
+          from nppbuf.t_dd_detail_ml where historybegdate>=20230101
     """
     # 执行 SQL 查询，并按批次抽取数据
     query_chunks = pd.read_sql(sql_query, connection)
@@ -39,8 +40,8 @@ def get_data_from_oracle(connection,sku_list):
 
     sql_query = """  
          select *
-      from nppbuf.T_DD_FORECAST_DETAIL_FJHIS 
-      where HOSTPARTID  in {} and historybegdate>20220101
+      from nppbuf.t_dd_detail_ml 
+      where HOSTPARTID  in {} and historybegdate>=20230101
     """.format(sku_list)
     # 执行 SQL 查询，并按批次抽取数据
     chunksize = 100000  # 每次查询返回的行数，你可以根据需要调整这个值
@@ -62,7 +63,7 @@ def main():
     print('----预测结果表预测前清空----')
     full_counts = get_full_counts(connection)
     counts_info = float(full_counts['COUNT(*)'])
-    # print('样本总数：',counts_info)
+    print('样本总数：',counts_info)
     full_sku_list = get_full_skulist(connection)['HOSTPARTID'].tolist()
     num_info = 0
     for i in range(0, len(full_sku_list), 200):
@@ -74,15 +75,14 @@ def main():
         # print('处理样本数量：', data.shape)
         num_info+=data.shape[0]
         print('待完成数量：',counts_info -num_info)
-        ods.main(data,'pred')
+        ods.main(data,'train')
         end_time =time.time()
         print('该批次耗时',(end_time-fst_time)/60 )
 
 if __name__ == '__main__':
     fst_full_time = time.time()
     main()
+
     end_full_time = time.time()
     print('总耗时：',(end_full_time -fst_full_time)/60)
-
-
 
